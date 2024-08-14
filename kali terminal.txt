@@ -1,0 +1,104 @@
+# ~/.zshrc file for zsh interactive shells
+
+# Set options for zsh
+setopt autocd                # Change directory just by typing its name
+setopt correct               # Auto-correct mistakes in commands
+setopt interactivecomments   # Allow comments in interactive mode
+setopt magicequalsubst       # Enable filename expansion for arguments of the form ‘anything=expression’
+setopt nonomatch             # Hide error message if there is no match for the pattern
+setopt notify                # Report the status of background jobs immediately
+setopt numericglobsort       # Sort filenames numerically when it makes sense
+setopt promptsubst           # Enable command substitution in prompt
+
+# Configure key bindings
+bindkey -e                      # Use emacs key bindings
+bindkey ' ' magic-space         # Do history expansion on space
+bindkey '^U' backward-kill-line # Ctrl + U
+bindkey '^[[3;5~' kill-word     # Ctrl + Supr
+bindkey '^[[3~' delete-char     # Delete
+bindkey '^[[1;5C' forward-word  # Ctrl + ->
+bindkey '^[[1;5D' backward-word # Ctrl + <-
+bindkey '^[[5~' beginning-of-buffer-or-history # Page up
+bindkey '^[[6~' end-of-buffer-or-history       # Page down
+bindkey '^[[H' beginning-of-line               # Home
+bindkey '^[[F' end-of-line                     # End
+bindkey '^[[Z' undo                            # Shift + tab undo last action
+
+# Enable completion features
+autoload -Uz compinit
+compinit -d ~/.cache/zcompdump
+zstyle ':completion:*:*:*:*:*' menu select
+zstyle ':completion:*' auto-description 'specify: %d'
+zstyle ':completion:*' completer _expand _complete
+zstyle ':completion:*' format 'Completing %d'
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*' list-colors ''
+zstyle ':completion:*' list-prompt %SAt %p: Hit TAB for more, or the character to insert%s
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+zstyle ':completion:*' rehash true
+zstyle ':completion:*' select-prompt %SScrolling active: current selection at %p%s
+zstyle ':completion:*' use-compctl false
+zstyle ':completion:*' verbose true
+zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
+
+# History configurations
+HISTFILE=~/.zsh_history
+HISTSIZE=1000
+SAVEHIST=2000
+setopt hist_expire_dups_first # Delete duplicates first when HISTFILE size exceeds HISTSIZE
+setopt hist_ignore_dups       # Ignore duplicated commands in history
+setopt hist_ignore_space      # Ignore commands that start with space
+setopt hist_verify            # Show command with history expansion to user before running it
+#setopt share_history         # Share command history data
+
+# Force zsh to show the complete history
+alias history="history 0"
+
+# Configure `time` format
+TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S\ncpu\t%P'
+
+# Make less more friendly for non-text input files, see lesspipe(1)
+#[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
+# Set variable identifying the chroot you work in (used in the prompt below)
+if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
+    debian_chroot=$(cat /etc/debian_chroot)
+fi
+
+# Set a default prompt with spacing
+if [[ $EUID -eq 0 ]]; then
+    # Root user prompt
+    PROMPT='%F{red}%n@bablu%f:%F{cyan}%~%f %# '
+else
+    # Normal user prompt
+    PROMPT='%F{blue}%n@%m%f:%F{cyan}%~%f %# '
+fi
+
+# Enable color support for ls, less, and man
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    export LS_COLORS="$LS_COLORS:ow=30;44:"
+
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+    alias diff='diff --color=auto'
+fi
+
+# Some more ls aliases
+alias ll='ls -l'
+alias la='ls -A'
+alias l='ls -CF'
+
+# Enable auto-suggestions based on the history
+if [ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
+    . /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+    ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#999'
+fi
+
+# Enable command-not-found if installed
+if [ -f /etc/zsh_command_not_found ]; then
+    . /etc/zsh_command_not_found
+fi
+

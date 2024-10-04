@@ -1,30 +1,37 @@
-# ~/.zshrc file for zsh interactive shells
+# ~/.zshrc file for zsh interactive shells.
+# see /usr/share/doc/zsh/examples/zshrc for examples
 
-# Set options for zsh
-setopt autocd                # Change directory just by typing its name
-setopt correct               # Auto-correct mistakes in commands
-setopt interactivecomments   # Allow comments in interactive mode
-setopt magicequalsubst       # Enable filename expansion for arguments of the form ‘anything=expression’
-setopt nonomatch             # Hide error message if there is no match for the pattern
-setopt notify                # Report the status of background jobs immediately
-setopt numericglobsort       # Sort filenames numerically when it makes sense
-setopt promptsubst           # Enable command substitution in prompt
+# Enable essential shell options
+setopt autocd              # change directory just by typing its name
+#setopt correct            # auto correct mistakes
+setopt interactivecomments # allow comments in interactive mode
+setopt magicequalsubst     # enable filename expansion for arguments of the form ‘anything=expression’
+setopt nonomatch           # hide error message if there is no match for the pattern
+setopt notify              # report the status of background jobs immediately
+setopt numericglobsort     # sort filenames numerically when it makes sense
+setopt promptsubst         # enable command substitution in prompt
 
-# Configure key bindings
-bindkey -e                      # Use emacs key bindings
-bindkey ' ' magic-space         # Do history expansion on space
-bindkey '^U' backward-kill-line # Ctrl + U
-bindkey '^[[3;5~' kill-word     # Ctrl + Supr
-bindkey '^[[3~' delete-char     # Delete
-bindkey '^[[1;5C' forward-word  # Ctrl + ->
-bindkey '^[[1;5D' backward-word # Ctrl + <-
-bindkey '^[[5~' beginning-of-buffer-or-history # Page up
-bindkey '^[[6~' end-of-buffer-or-history       # Page down
-bindkey '^[[H' beginning-of-line               # Home
-bindkey '^[[F' end-of-line                     # End
-bindkey '^[[Z' undo                            # Shift + tab undo last action
+# Remove '/' from word boundaries
+WORDCHARS=${WORDCHARS//\/}
 
-# Enable completion features
+# Disable the EOL sign ('%') in the prompt
+PROMPT_EOL_MARK=""
+
+# Configure keybindings
+bindkey -e                                        # Emacs key bindings
+bindkey ' ' magic-space                           # Perform history expansion on space
+bindkey '^U' backward-kill-line                   # Ctrl + U deletes back to start of line
+bindkey '^[[3;5~' kill-word                       # Ctrl + Supr kills a word
+bindkey '^[[3~' delete-char                       # Delete key removes a character
+bindkey '^[[1;5C' forward-word                    # Ctrl + → moves forward a word
+bindkey '^[[1;5D' backward-word                   # Ctrl + ← moves backward a word
+bindkey '^[[5~' beginning-of-buffer-or-history    # Page up goes to the beginning of history
+bindkey '^[[6~' end-of-buffer-or-history          # Page down goes to the end of history
+bindkey '^[[H' beginning-of-line                  # Home key goes to start of line
+bindkey '^[[F' end-of-line                        # End key goes to end of line
+bindkey '^[[Z' undo                               # Shift + Tab for undoing the last action
+
+# Completion settings
 autoload -Uz compinit
 compinit -d ~/.cache/zcompdump
 zstyle ':completion:*:*:*:*:*' menu select
@@ -41,64 +48,108 @@ zstyle ':completion:*' use-compctl false
 zstyle ':completion:*' verbose true
 zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
 
-# History configurations
+# History settings
 HISTFILE=~/.zsh_history
 HISTSIZE=1000
 SAVEHIST=2000
-setopt hist_expire_dups_first # Delete duplicates first when HISTFILE size exceeds HISTSIZE
-setopt hist_ignore_dups       # Ignore duplicated commands in history
-setopt hist_ignore_space      # Ignore commands that start with space
-setopt hist_verify            # Show command with history expansion to user before running it
-#setopt share_history         # Share command history data
+setopt hist_expire_dups_first  # Remove duplicate entries before other entries
+setopt hist_ignore_dups        # Avoid duplicate commands in history
+setopt hist_ignore_space       # Don't save commands starting with a space
+setopt hist_verify             # Show history-expanded commands before execution
+#setopt share_history          # Share history between zsh instances
 
-# Force zsh to show the complete history
+# Force full history listing
 alias history="history 0"
 
-# Configure `time` format
+# Time formatting
 TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S\ncpu\t%P'
 
-# Make less more friendly for non-text input files, see lesspipe(1)
-#[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
-
-# Set variable identifying the chroot you work in (used in the prompt below)
+# Chroot prompt
 if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
     debian_chroot=$(cat /etc/debian_chroot)
 fi
 
-# Set a default prompt with spacing
-if [[ $EUID -eq 0 ]]; then
-    # Root user prompt
-    PROMPT='%F{red}%n@bablu%f:%F{cyan}%~%f %# '
-else
-    # Normal user prompt
-    PROMPT='%F{blue}%n@%m%f:%F{cyan}%~%f %# '
-fi
+# Enable color in the terminal prompt
+case "$TERM" in
+    xterm-color|*-256color) color_prompt=yes;;
+esac
+force_color_prompt=yes
 
-# Enable color support for ls, less, and man
+# Prompt configuration function
+configure_prompt() {
+    prompt_symbol=💀
+
+    case "$PROMPT_ALTERNATIVE" in
+        oneline)
+            PROMPT=$'%F{%(#.blue.green)}┌──${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{%(#.red.blue)}%n'$prompt_symbol$'%m%b%F{%(#.blue.green)})-[%B%F{reset}%(6~.%-1~/…/%4~.%5~)%b%F{%(#.blue.green)}]\n└─%B%(#.%F{red}#.%F{blue}$)%b%F{reset} '
+            ;;
+        twoline)
+            PROMPT=$'${debian_chroot:+($debian_chroot)}%B%F{%(#.red.blue)}%n@%m%b%F{reset}:%B%F{%(#.blue.green)}%~%b%F{reset}%(#.#.$) '
+            RPROMPT=''
+            ;;
+    esac
+    unset prompt_symbol
+}
+
+# Read configuration variables for prompt
+PROMPT_ALTERNATIVE=twoline
+NEWLINE_BEFORE_PROMPT=yes
+
+# If color_prompt is enabled, customize the prompt and enable syntax-highlighting
+if [ "$color_prompt" = yes ]; then
+    VIRTUAL_ENV_DISABLE_PROMPT=1
+    configure_prompt
+
+    # Enable syntax highlighting
+    if [ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
+        . /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+        ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern)
+        ZSH_HIGHLIGHT_STYLES[default]=none
+        ZSH_HIGHLIGHT_STYLES[commandseparator]=fg=blue,bold
+        ZSH_HIGHLIGHT_STYLES[comment]=fg=black,bold
+        ZSH_HIGHLIGHT_STYLES[bracket-error]=fg=red,bold
+        ZSH_HIGHLIGHT_STYLES[single-quoted-argument]=fg=yellow
+    fi
+else
+    PROMPT='${debian_chroot:+($debian_chroot)}%n@%m:%~%(#.#.$) '
+fi
+unset color_prompt force_color_prompt
+
+# Toggle between oneline and twoline prompts
+toggle_oneline_prompt(){
+    if [ "$PROMPT_ALTERNATIVE" = "oneline" ]; then
+        PROMPT_ALTERNATIVE=twoline
+    else
+        PROMPT_ALTERNATIVE=oneline
+    fi
+    configure_prompt
+    zle reset-prompt
+}
+zle -N toggle_oneline_prompt
+bindkey ^P toggle_oneline_prompt
+
+# Set terminal title
+case "$TERM" in
+xterm*|rxvt*|Eterm|aterm|kterm|gnome*|alacritty)
+    TERM_TITLE=$'\e]0;${debian_chroot:+($debian_chroot)}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))}%n@%m: %~\a'
+    ;;
+esac
+
+# Print the terminal title and optionally insert a new line
+precmd() {
+    print -Pnr -- "$TERM_TITLE"
+
+    if [ "$NEWLINE_BEFORE_PROMPT" = yes ]; then
+        if [ -z "$_NEW_LINE_BEFORE_PROMPT" ]; then
+            _NEW_LINE_BEFORE_PROMPT=1
+        else
+            print ""
+        fi
+    fi
+}
+
+# Enable color for ls, less, and man pages, with custom folder color for ls
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-    export LS_COLORS="$LS_COLORS:ow=30;44:"
-
-    alias ls='ls --color=auto'
-    alias grep='grep --color=auto'
-    alias fgrep='fgrep --color=auto'
-    alias egrep='egrep --color=auto'
-    alias diff='diff --color=auto'
+    export LS_COLORS="$LS_COLORS:ow=30;44:" # Fix ls color for folders
 fi
-
-# Some more ls aliases
-alias ll='ls -l'
-alias la='ls -A'
-alias l='ls -CF'
-
-# Enable auto-suggestions based on the history
-if [ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
-    . /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-    ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#999'
-fi
-
-# Enable command-not-found if installed
-if [ -f /etc/zsh_command_not_found ]; then
-    . /etc/zsh_command_not_found
-fi
-
